@@ -228,6 +228,32 @@ func (v Vehicle) OpenTrunk(trunk string) error {
 	return err
 }
 
+// Vents the vehicle's windows
+func (v Vehicle) WindowsVent() error {
+	return v.windows("vent")
+}
+
+// Closes the vehicle's windows
+func (v Vehicle) WindowsClose() error {
+	return v.windows("close")
+}
+
+// Vents or Closes the windows (only works on model 3 currently)
+func (v Vehicle) windows(action string) error {
+	apiUrl := BaseURL + "/vehicles/" + strconv.FormatInt(v.ID, 10) + "/command/window_control"
+	windowRequest := struct {
+		VehicleID string `json:"command"`
+		Lat       int    `json:"lat"`
+		Lon       int    `json:"lon"`
+	}{
+		action, 0, 0,
+	}
+	body, _ := json.Marshal(windowRequest)
+
+	_, err := sendCommand(apiUrl, body)
+	return err
+}
+
 // Sends a command to the vehicle
 func sendCommand(url string, reqBody []byte) ([]byte, error) {
 	body, err := ActiveClient.post(url, reqBody)
