@@ -254,6 +254,44 @@ func (v Vehicle) windows(action string) error {
 	return err
 }
 
+// Sets sentry mode on or off (true or false)
+func (v Vehicle) SetSentryMode(on bool) error {
+	apiUrl := BaseURL + "/vehicles/" + strconv.FormatInt(v.ID, 10) + "/command/set_sentry_mode"
+	theJson := `{"on": "` + strconv.FormatBool(on) + `"}`
+	_, err := sendCommand(apiUrl, []byte(theJson))
+	return err
+}
+
+// Sets heat for seat number (0=driver, 1=passenger, 2=rear-left...)
+func (v Vehicle) HeatSeat(seat, level int) error {
+	//requires climate to be set first
+	err := v.StartAirConditioning()
+	if err != nil {
+		panic(err)
+	}
+	apiUrl := BaseURL + "/vehicles/" + strconv.FormatInt(v.ID, 10) + "/command/remote_seat_heater_request"
+	seatRequest := struct {
+		Heater int `json:"heater"`
+		Level  int `json:"level"`
+	}{
+		seat, level,
+	}
+	body, _ := json.Marshal(seatRequest)
+	_, err = sendCommand(apiUrl, body)
+	return err
+}
+
+// Sets steering wheel heat on or off
+func (v Vehicle) HeatWheel(on bool) error {
+	//requires climate to be set first
+	err := v.StartAirConditioning()
+
+	apiUrl := BaseURL + "/vehicles/" + strconv.FormatInt(v.ID, 10) + "/command/remote_steering_wheel_heater_request"
+	theJson := `{"on": "` + strconv.FormatBool(on) + `"}`
+	_, err = sendCommand(apiUrl, []byte(theJson))
+	return err
+}
+
 // Sends a command to the vehicle
 func sendCommand(url string, reqBody []byte) ([]byte, error) {
 	body, err := ActiveClient.post(url, reqBody)
